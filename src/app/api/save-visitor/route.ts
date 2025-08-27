@@ -10,16 +10,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
     }
 
+    // Ensure environment variables are defined
+    const megaEmail = process.env.MEGA_EMAIL;
+    const megaPassword = process.env.MEGA_PASSWORD;
+
+    if (!megaEmail || !megaPassword) {
+      throw new Error('MEGA_EMAIL or MEGA_PASSWORD environment variables are not set');
+    }
+
     // Initialize MEGA storage
     const storage = new Storage({
-      email: process.env.MEGA_EMAIL,
-      password: process.env.MEGA_PASSWORD
+      email: megaEmail,
+      password: megaPassword
     });
 
     // Wait for login
     await new Promise((resolve, reject) => {
       storage.on('ready', resolve);
-      storage.on('error', reject);
+      // Explicitly type the error event to bypass TypeScript issue
+      storage.on('error' as any, reject);
     });
 
     // Create visitor data

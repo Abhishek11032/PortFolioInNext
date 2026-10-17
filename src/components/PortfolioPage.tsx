@@ -7,6 +7,7 @@ import ProjectsSection from "@/components/sections/ProjectsSection";
 import SkillsSection from "@/components/sections/SkillsSection";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 export default function PortfolioPage() {
   return (
@@ -23,6 +24,7 @@ export default function PortfolioPage() {
         <ContactSection />
       </main>
       <Footer />
+      <ChatWidget />
     </div>
   );
 }

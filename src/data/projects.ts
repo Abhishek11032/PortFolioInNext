@@ -1,0 +1,48 @@
+import type { Project } from "@/types/portfolio";
+
+export const projects = [
+  {
+    number: "01",
+    name: "Driver Drowsiness Detection System",
+    category: "College Project",
+    icon: "bx-car",
+    description: "Built a real-time driver drowsiness detection system using Python and OpenCV. Used the Haar Cascade algorithm for face and eye detection. Monitored the Eye Aspect Ratio (EAR) to detect prolonged eye closure. Implemented audio and visual alerts for drowsiness. Optimized for low-latency real-time processing. Designed with potential applications in vehicle safety systems.",
+    image: "/DD.png",
+    imageAlt: "Illustration contrasting a drowsy person with an alert person; not an application screenshot.",
+    imageCaption: "Concept illustration · not a product screenshot",
+    technologies: ["Python", "OpenCV", "Haar Cascade", "Eye Aspect Ratio (EAR)", "Computer Vision", "Real-Time Image Processing"],
+    features: ["Real-time face and eye detection.", "Eye-closure monitoring using Eye Aspect Ratio (EAR).", "Audio and visual alerts for detected drowsiness.", "Low-latency image processing.", "Potential application in driver monitoring and vehicle safety systems."],
+    showFeaturesByDefault: true,
+    featured: false,
+  },
+  {
+    number: "02",
+    name: "AI Resume Analyzer & Career Assistant",
+    category: "Personal Project",
+    icon: "bx-file-find",
+    description: "Developed an AI-powered career assistance platform that analyzes resumes against job descriptions to evaluate skill alignment, keyword relevance, and qualification gaps. Built a FastAPI backend integrated with Google Gemini and OpenAI APIs to generate structured, validated resume analysis results. Implemented asynchronous processing with Celery and Redis, secure JWT-based APIs, and a Next.js dashboard displaying resume scores, matched and missing skills, strengths, weaknesses, and learning recommendations.",
+    technologies: ["Next.js", "Python", "FastAPI", "Google Gemini", "OpenAI API", "PostgreSQL", "Celery", "Redis", "JWT", "Docker"],
+    features: ["Resume and job description matching with skill-gap and keyword analysis.", "AI-generated feedback, improvement recommendations, and structured JSON validated with Pydantic.", "Celery and Redis background tasks with status tracking, retries, and failure handling.", "JWT-protected APIs with user ownership checks."],
+    featured: false,
+  },
+  {
+    number: "03",
+    name: "MVKYC — Digital Identity & Verification Platform",
+    category: "Professional Work Project at GTPL",
+    icon: "bx-shield-quarter",
+    description: "Contributed to the development of MVKYC, a digital identity and verification platform designed to support KYC workflows and document verification. Worked on frontend development using modern web technologies and backend API integration to support verification processes, data handling, and role-based workflows. Focused on building responsive user interfaces, maintaining reliable API communication, and delivering a smooth user experience across the platform.",
+    technologies: ["React.js", "Next.js", "TypeScript", "Python", "Django REST Framework", "PostgreSQL", "REST APIs"],
+    features: ["KYC identity and document verification workflows.", "Responsive frontend development and backend API integration.", "Structured document and verification data handling.", "Maintainable application development."],
+    featured: false,
+  },
+  {
+    number: "04",
+    name: "MVBook — Business Management System",
+    category: "Professional / Work Project",
+    icon: "bx-book-content",
+    description: "Contributed to the development of a multi-tenant business management and accounting platform supporting sales, purchase, inventory, reporting, and financial workflows across organizations. Developed reusable, responsive frontend modules using React.js and TypeScript and secure REST APIs using Django REST Framework. Worked on JWT authentication, role-based access control, tenant-aware data isolation, database query optimization, asynchronous background processing, and AI-powered OCR workflows for business document extraction and validation.",
+    technologies: ["React.js", "TypeScript", "Django REST Framework", "PostgreSQL", "Redis", "Celery", "Apache Kafka", "OpenAI API", "Docker", "GCP", "API Gateway", "JWT"],
+    features: ["Multi-tenant business and accounting workflows, including sales, purchase, inventory, and financial reporting modules.", "Reusable responsive frontend components and secure APIs with JWT authentication, role-based access, and tenant-aware data isolation.", "Database query optimization, caching, and API performance improvements; asynchronous tasks with Celery and Redis.", "Kafka event workflows and AI-assisted document OCR with structured extraction and validation before transaction processing."],
+    featured: true,
+  },
+] satisfies readonly Project[];

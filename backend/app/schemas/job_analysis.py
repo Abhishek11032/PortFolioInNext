@@ -39,17 +39,3 @@ class JobFitReport(BaseModel):
     supporting_evidence: list[ShortText] = Field(max_length=16)
     skill_evidence: list[SkillEvidence] = Field(max_length=40)
     unverified_or_unconfirmed_skills: list[ShortText] = Field(max_length=30)
-
-
-class JobAnalysisAccepted(BaseModel):
-    task_id: str
-    access_token: str
-    status: Literal["queued"] = "queued"
-
-
-class JobAnalysisStatus(BaseModel):
-    task_id: str
-    status: Literal["queued", "processing", "completed", "failed"]
-    phase: str | None = None
-    report: JobFitReport | None = None
-    error: str | None = None

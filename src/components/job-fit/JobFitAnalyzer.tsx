@@ -3,24 +3,52 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { getBackendBaseUrl, getBackendError } from "@/lib/backend";
-import type { JobAnalysisAccepted, JobAnalysisResult, JobFitReport } from "@/types/job-analysis";
+import type { JobFitReport } from "@/types/job-analysis";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-const POLL_INTERVAL_MS = 2500;
-const MAX_POLL_DURATION_MS = 10 * 60 * 1000;
+const MAX_ANALYSIS_DURATION_MS = 7 * 60 * 1000;
+type AnalysisState = "idle" | "processing" | "completed" | "failed";
 
-function waitForPoll(signal: AbortSignal) {
-  return new Promise<void>((resolve, reject) => {
-    const finish = () => { signal.removeEventListener("abort", abort); resolve(); };
-    const timer = window.setTimeout(finish, POLL_INTERVAL_MS);
-    const abort = () => { window.clearTimeout(timer); signal.removeEventListener("abort", abort); reject(new DOMException("Aborted", "AbortError")); };
-    if (signal.aborted) abort();
-    else signal.addEventListener("abort", abort, { once: true });
-  });
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isJobFitReport(value: unknown): value is JobFitReport {
+  if (!isRecord(value)) return false;
+
+  const stringArrayFields = [
+    "required_skills_matched", "required_skills_missing", "preferred_skills_matched",
+    "preferred_skills_missing", "verified_experience", "strengths", "skill_gaps",
+    "interview_recommendations", "supporting_evidence", "unverified_or_unconfirmed_skills",
+  ];
+  const projectsValid = Array.isArray(value.relevant_projects) && value.relevant_projects.every(
+    (project) => isRecord(project)
+      && typeof project.project_name === "string"
+      && typeof project.relevance === "string"
+      && typeof project.evidence === "string",
+  );
+  const evidenceValid = Array.isArray(value.skill_evidence) && value.skill_evidence.every(
+    (item) => isRecord(item)
+      && typeof item.skill === "string"
+      && typeof item.evidence === "string"
+      && ["professional_experience", "project", "skills_list_only", "not_found"].includes(String(item.evidence_level)),
+  );
+
+  return Number.isInteger(value.overall_match_score)
+    && Number(value.overall_match_score) >= 0
+    && Number(value.overall_match_score) <= 100
+    && typeof value.summary === "string"
+    && stringArrayFields.every((field) => isStringArray(value[field]))
+    && projectsValid
+    && evidenceValid;
 }
 
 function ReportList({ title, items }: { title: string; items: string[] }) {
-  if (items.length === 0) return null;
+  if (!Array.isArray(items) || items.length === 0) return null;
   return <section className="min-w-0"><h4 className="text-sm font-semibold text-cream">{title}</h4><ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-6 text-muted">{items.map((item, index) => <li key={`${title}-${index}`} className="[overflow-wrap:anywhere]">{item}</li>)}</ul></section>;
 }
 
@@ -54,8 +82,7 @@ export default function JobFitAnalyzer() {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
-  const [status, setStatus] = useState<JobAnalysisResult["status"] | "idle">("idle");
-  const [phase, setPhase] = useState("");
+  const [status, setStatus] = useState<AnalysisState>("idle");
   const [error, setError] = useState("");
   const [report, setReport] = useState<JobFitReport | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,23 +110,6 @@ export default function JobFitAnalyzer() {
     setDescription("");
   }
 
-  async function pollTask(baseUrl: string, accepted: JobAnalysisAccepted, signal: AbortSignal) {
-    const startedAt = Date.now();
-    while (Date.now() - startedAt < MAX_POLL_DURATION_MS) {
-      await waitForPoll(signal);
-      const response = await fetch(`${baseUrl}/api/v1/job-analysis/${encodeURIComponent(accepted.task_id)}`, {
-        headers: { "X-Analysis-Token": accepted.access_token }, signal, cache: "no-store",
-      });
-      if (!response.ok) throw new Error(await getBackendError(response, "Could not retrieve the analysis status."));
-      const result = await response.json() as JobAnalysisResult;
-      setStatus(result.status);
-      setPhase(result.phase ?? "");
-      if (result.status === "completed" && result.report) { setReport(result.report); return; }
-      if (result.status === "failed") throw new Error(result.error || "The analysis could not be completed.");
-    }
-    throw new Error("Analysis is taking longer than expected. You can submit it again later.");
-  }
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmitting || fileError) return;
@@ -118,28 +128,36 @@ export default function JobFitAnalyzer() {
     requestController.current?.abort();
     const controller = new AbortController();
     requestController.current = controller;
+    let timedOut = false;
+    const timeout = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, MAX_ANALYSIS_DURATION_MS);
     setIsSubmitting(true);
-    setStatus("queued");
-    setPhase("Submitting job description");
+    setStatus("processing");
     setError("");
     setReport(null);
     try {
       const formData = new FormData();
       if (file) formData.set("file", file);
       else formData.set("job_description", description.trim());
-      const response = await fetch(`${backendUrl}/api/v1/job-analysis`, { method: "POST", body: formData, signal: controller.signal });
+      const response = await fetch(`${backendUrl}/api/v1/job-analysis`, { method: "POST", body: formData, signal: controller.signal, cache: "no-store" });
+      if (response.status === 202) {
+        throw new Error("The backend is still running the old queued analyzer. Rebuild and restart the API service, then try again.");
+      }
       if (!response.ok) throw new Error(await getBackendError(response, "Could not submit the job description."));
-      const accepted = await response.json() as JobAnalysisAccepted;
-      setStatus("queued");
-      setPhase("Waiting for an available worker");
-      await pollTask(backendUrl, accepted, controller.signal);
+      const result: unknown = await response.json();
+      if (!isJobFitReport(result)) {
+        throw new Error("The backend returned an incomplete analysis report. Restart the updated API service and try again.");
+      }
+      setReport(result);
       setStatus("completed");
-      setPhase("");
     } catch (reason) {
-      if (reason instanceof DOMException && reason.name === "AbortError") return;
+      if (reason instanceof DOMException && reason.name === "AbortError" && !timedOut) return;
       setStatus("failed");
-      setError(reason instanceof Error ? reason.message : "Something went wrong. Please try again.");
+      setError(timedOut ? "Analysis took too long. Please try again later." : reason instanceof Error ? reason.message : "Something went wrong. Please try again.");
     } finally {
+      window.clearTimeout(timeout);
       if (requestController.current === controller) setIsSubmitting(false);
     }
   }
@@ -149,7 +167,7 @@ export default function JobFitAnalyzer() {
     requestController.current = null;
     if (fileInputRef.current) fileInputRef.current.value = "";
     setIsSubmitting(false);
-    setDescription(""); setFile(null); setFileError(""); setStatus("idle"); setPhase(""); setError(""); setReport(null);
+    setDescription(""); setFile(null); setFileError(""); setStatus("idle"); setError(""); setReport(null);
   }
 
   return (
@@ -174,7 +192,7 @@ export default function JobFitAnalyzer() {
           {(status !== "idle" || description || file) && <button type="button" onClick={reset} className="min-h-12 rounded-xl border border-line px-4 text-sm font-medium text-muted hover:bg-hover-surface hover:text-cream focus-visible:outline-2 focus-visible:outline-cyan">Clear</button>}
         </div>
       </form>
-      {isSubmitting && <p className="mt-4 text-sm text-cyan" role="status" aria-live="polite"><span className="font-semibold">{status === "processing" ? "Processing" : "Queued"}:</span> {phase || (status === "processing" ? "Comparing profile evidence…" : "Waiting for an available worker…")}</p>}
+      {isSubmitting && <p className="mt-4 text-sm text-cyan" role="status" aria-live="polite"><span className="font-semibold">Analyzing:</span> Comparing the job description with verified profile evidence…</p>}
       {error && <p className="mt-4 rounded-xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm leading-6 text-rose-200" role="alert"><span className="font-semibold">Analysis failed.</span> {error}</p>}
       {report && <><p className="mt-5 text-sm font-semibold text-cyan" role="status">Analysis complete</p><AnalysisReport report={report} /></>}
     </div>

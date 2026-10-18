@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -9,7 +8,6 @@ from redis.asyncio import Redis
 from app.api.routes import chat, job_analysis
 from app.api.routes.dependencies import get_redis
 from app.core.config import get_settings
-from app.tasks.celery_app import celery_app
 
 
 @asynccontextmanager
@@ -29,7 +27,7 @@ app.add_middleware(
     allow_origins=settings.allowed_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "X-Analysis-Token"],
+    allow_headers=["Content-Type"],
 )
 
 
@@ -53,14 +51,3 @@ async def health(redis: Redis = Depends(get_redis)):
     except Exception as error:
         raise HTTPException(status_code=503, detail="Redis is unavailable.") from error
     return {"status": "ok", "redis": "ok"}
-
-
-@app.get("/health/worker")
-async def worker_health():
-    try:
-        workers = await asyncio.to_thread(celery_app.control.inspect(timeout=1.5).ping)
-    except Exception as error:
-        raise HTTPException(status_code=503, detail="Celery worker is unavailable.") from error
-    if not workers:
-        raise HTTPException(status_code=503, detail="No Celery workers are responding.")
-    return {"status": "ok", "workers": len(workers)}

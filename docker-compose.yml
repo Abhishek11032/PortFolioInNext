@@ -15,10 +15,8 @@ services:
     env_file:
       - path: ./backend/.env
         required: false
-    environment: &backend-environment
+    environment:
       REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
     depends_on:
       redis:
         condition: service_healthy
@@ -29,22 +27,4 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
-
-  worker:
-    build: ./backend
-    command: ["sh", "-c", "celery -A app.tasks.celery_app:celery_app worker --loglevel=INFO --concurrency=$${CELERY_WORKER_CONCURRENCY:-2}"]
-    env_file:
-      - path: ./backend/.env
-        required: false
-    environment: *backend-environment
-    depends_on:
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "celery -A app.tasks.celery_app:celery_app inspect ping --timeout=2 | grep -q pong"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
     restart: unless-stopped

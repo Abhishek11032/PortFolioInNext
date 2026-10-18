@@ -28,19 +28,3 @@ export type JobFitReport = {
   skill_evidence: SkillEvidence[];
   unverified_or_unconfirmed_skills: string[];
 };
-
-type JobAnalysisStatus = "queued" | "processing" | "completed" | "failed";
-
-export type JobAnalysisAccepted = {
-  task_id: string;
-  access_token: string;
-  status: "queued";
-};
-
-export type JobAnalysisResult = {
-  task_id: string;
-  status: JobAnalysisStatus;
-  phase?: string | null;
-  report?: JobFitReport | null;
-  error?: string | null;
-};

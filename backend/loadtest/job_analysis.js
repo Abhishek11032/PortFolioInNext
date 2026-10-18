@@ -1,5 +1,5 @@
 import http from "k6/http";
-import { check, sleep } from "k6";
+import { check } from "k6";
 
 const base = __ENV.API_BASE_URL || "http://localhost:8000";
 const text = __ENV.JOB_DESCRIPTION || "We are looking for a full stack software developer with experience in React, TypeScript, Python, Django REST Framework, REST APIs, PostgreSQL, and building reliable business applications. The role includes collaborating with product teams, optimizing queries, and maintaining responsive user interfaces.";
@@ -19,13 +19,12 @@ export const options = {
       ],
     },
   },
-  thresholds: { http_req_failed: ["rate<0.05"], http_req_duration: ["p(95)<2000"] },
+  thresholds: { http_req_failed: ["rate<0.05"], http_req_duration: ["p(95)<100000"] },
 };
 
 function submitJobAnalysis() {
   const response = http.post(`${base}/api/v1/job-analysis`, { job_description: text });
-  check(response, { "submission accepted or rate limited": (r) => r.status === 202 || r.status === 429 });
-  sleep(1);
+  check(response, { "report returned or request rate limited": (r) => r.status === 200 || r.status === 429 });
 }
 
 export default submitJobAnalysis;

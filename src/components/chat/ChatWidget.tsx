@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import type { ChatMessage } from "@/types/chat";
 import AssistantMessage from "@/components/chat/AssistantMessage";
+import { getBackendBaseUrl, getBackendError } from "@/lib/backend";
 
 type ChatEntry = ChatMessage & { retryable?: boolean };
 type FailedQuestion = { prompt: string; history: ChatMessage[] };
@@ -94,7 +95,9 @@ export default function ChatWidget() {
     setFailedQuestion(null);
 
     try {
-      const response = await fetch("/api/chat", {
+      const backendUrl = getBackendBaseUrl();
+      if (!backendUrl) throw new Error("AI backend is not configured for this deployment.");
+      const response = await fetch(`${backendUrl}/api/v1/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: requestMessages }),
@@ -105,9 +108,7 @@ export default function ChatWidget() {
         return;
       }
 
-      const safeError = result && typeof result === "object" && "error" in result && typeof result.error === "string"
-        ? result.error
-        : assistantError;
+      const safeError = await getBackendError(response, assistantError);
       setMessages([...nextMessages, { role: "assistant", content: safeError, retryable: true }]);
       setFailedQuestion({ prompt: cleanPrompt, history });
     } catch {
@@ -151,7 +152,7 @@ export default function ChatWidget() {
           onKeyDown={(event) => {
             if (event.key === "Escape") setIsOpen(false);
           }}
-          className="fixed inset-x-2 bottom-2 top-2 flex flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl shadow-black/50 focus:outline-none sm:inset-x-auto sm:bottom-24 sm:right-6 sm:top-auto sm:h-[min(680px,calc(100dvh-11rem))] sm:max-h-[calc(100dvh-11rem)] sm:w-[min(400px,calc(100vw-3rem))]"
+          className="fixed bottom-20 right-2 flex h-[min(65dvh,560px)] max-h-[calc(100dvh-6rem)] w-[min(400px,calc(100vw-1rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl shadow-black/50 focus:outline-none sm:bottom-24 sm:right-6 sm:h-[min(680px,calc(100dvh-11rem))] sm:max-h-[calc(100dvh-11rem)] sm:w-[min(400px,calc(100vw-3rem))]"
         >
           <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3.5">
             <div className="flex min-w-0 items-center gap-3">

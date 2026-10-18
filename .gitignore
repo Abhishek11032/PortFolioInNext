@@ -17,8 +17,15 @@
 /dist
 /coverage
 
-# Environment variables and secrets
+# Environment variables and secrets (the Next.js frontend is at the repo root)
 .env*
+/.env
+/.env.*
+/backend/.env
+/backend/.env.*
+# Keep placeholder templates trackable after the explicit secret-file rules.
+!/.env.example
+!/backend/.env.example
 
 # Vercel
 .vercel

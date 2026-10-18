@@ -1,0 +1,18 @@
+# Backend environment secrets; only the placeholder template may be committed.
+.env
+.env.*
+!.env.example
+
+# Python bytecode and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local tooling
+.venv/
+venv/
+env/
+.mypy_cache/
+.ruff_cache/

@@ -3,7 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-const navigation = ["About", "Skills", "Projects", "Experience", "Education", "Contact"];
+const navigation = [
+  { id: "About", label: "About" },
+  { id: "Skills", label: "Skills" },
+  { id: "Experience", label: "Experience" },
+  { id: "Projects", label: "Projects" },
+  { id: "Education", label: "Education" },
+  { id: "Contact", label: "Contact" },
+  { id: "job-fit-analyzer", label: "Job Fit Analyzer" },
+];
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -11,7 +19,7 @@ export default function Navbar() {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const sections = ["Home", ...navigation]
+    const sections = ["Home", ...navigation.map(({ id }) => id)]
       .map((id) => document.getElementById(id))
       .filter((section): section is HTMLElement => section !== null);
 
@@ -48,21 +56,30 @@ export default function Navbar() {
           }}
           className={`${menuOpen ? "grid" : "hidden"} absolute left-0 right-0 top-full gap-1 border-b border-line bg-surface px-4 py-3 shadow-xl shadow-black/20 lg:static lg:flex lg:items-center lg:gap-1 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none`}
         >
-          {navigation.map((item) => {
-            const active = activeSection === item;
+          {navigation.map(({ id, label }) => {
+            const active = activeSection === id;
+            const href = id === "job-fit-analyzer" ? "/#job-fit-analyzer" : `#${id}`;
             return (
-              <a
-                key={item}
-                href={`#${item}`}
+              <Link
+                key={id}
+                href={href}
                 aria-current={active ? "location" : undefined}
                 onClick={() => setMenuOpen(false)}
                 className={`min-h-11 rounded-lg px-3 py-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan lg:min-h-0 lg:px-2.5 lg:py-2 lg:text-xs xl:px-3 ${active ? "border-l-2 border-accent bg-hover-surface font-medium text-cyan lg:border-l-0 lg:bg-transparent lg:underline lg:decoration-accent lg:decoration-2 lg:underline-offset-8" : "text-muted hover:bg-hover-surface hover:text-cream lg:hover:bg-transparent lg:hover:text-cyan"}`}
               >
-                {item}
-              </a>
+                {label}
+              </Link>
             );
           })}
         </nav>
+
+        <Link
+          href="/#job-fit-analyzer"
+          onClick={() => setMenuOpen(false)}
+          className="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-accent/40 bg-accent/10 px-2.5 text-[11px] font-semibold text-cream transition-colors hover:border-cyan/50 hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan sm:px-3 sm:text-xs lg:hidden"
+        >
+          Job Fit Analyzer
+        </Link>
 
         <button
           ref={menuButtonRef}

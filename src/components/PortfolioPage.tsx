@@ -8,6 +8,7 @@ import SkillsSection from "@/components/sections/SkillsSection";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import ChatWidget from "@/components/chat/ChatWidget";
+import JobFitSection from "@/components/sections/JobFitSection";
 
 export default function PortfolioPage() {
   return (
@@ -18,10 +19,11 @@ export default function PortfolioPage() {
         <HeroSection />
         <AboutSection />
         <SkillsSection />
-        <ProjectsSection />
         <ExperienceSection />
+        <ProjectsSection />
         <EducationSection />
         <ContactSection />
+        <JobFitSection />
       </main>
       <Footer />
       <ChatWidget />

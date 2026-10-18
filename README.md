@@ -9,8 +9,8 @@ Next.js frontend (port 3000)
   └── Calls FastAPI using NEXT_PUBLIC_FASTAPI_BASE_URL
 
 FastAPI backend (port 8000)
-  ├── POST /api/v1/chat → LangChain (Mistral primary, Groq fallback)
-  └── POST /api/v1/job-analysis → validate/extract → AI report response
+  ├── POST /api/v1/chat → LangChain (configured Mistral/Groq order)
+  └── POST /api/v1/job-analysis → validate/extract → Gemini → Groq → Mistral → report response
 
 Redis
   └── Shared API rate limits for chat and job analysis
@@ -23,7 +23,7 @@ The backend profile is maintained in `backend/app/data/portfolio_profile.py` and
 - Node.js compatible with the installed Next.js 15 project
 - Python 3.10+
 - Docker Desktop with Compose (recommended for local Redis and API)
-- A Mistral API key and/or a Groq API key
+- A Gemini, Groq, and/or Mistral API key (Gemini is the Job Fit Analyzer primary)
 
 ## Environment configuration
 
@@ -33,10 +33,13 @@ Add `NEXT_PUBLIC_FASTAPI_BASE_URL=http://localhost:8000` to the repository-root 
 | --- | --- |
 | `MISTRAL_API_KEY` | Server-only Mistral credential |
 | `GROQ_API_KEY` | Server-only Groq credential |
+| `GEMINI_API_KEY` | Server-only Google Gemini credential |
 | `AI_PRIMARY_PROVIDER` | `mistral` or `groq`; defaults to `mistral` |
 | `AI_FALLBACK_PROVIDER` | `mistral` or `groq`; defaults to `groq` |
 | `MISTRAL_MODEL` | Mistral model ID; defaults to `mistral-small-latest` |
 | `GROQ_MODEL` | Groq model ID; defaults to `openai/gpt-oss-120b` |
+| `GEMINI_MODEL` | Gemini model ID; defaults to `gemini-3.8-flash` |
+| `JOB_ANALYSIS_PROVIDER_ORDER` | Ordered unique provider list; defaults to `gemini,groq,mistral` |
 | `AI_TIMEOUT_SECONDS` | Per-provider request timeout; defaults to 45 seconds |
 | `REDIS_URL` | Redis connection used for shared rate limits |
 | `CHAT_LIMIT_PER_MINUTE` | Chat requests allowed per client per minute |
@@ -44,7 +47,9 @@ Add `NEXT_PUBLIC_FASTAPI_BASE_URL=http://localhost:8000` to the repository-root 
 | `CORS_ORIGINS` | Exact comma-separated frontend origins allowed by the API |
 | `NEXT_PUBLIC_FASTAPI_BASE_URL` | Browser-visible backend address; not a secret |
 
-The backend defaults to Mistral (`mistral-small-latest`) with Groq (`openai/gpt-oss-120b`) as fallback. Provider order and model names are configurable; use model IDs enabled for your account. If the primary key is missing while the configured fallback key exists, the service uses the fallback. Provider authentication errors do not trigger fallback. Never use a `NEXT_PUBLIC_` prefix for credentials.
+The chatbot retains its existing Mistral/Groq provider configuration (`AI_PRIMARY_PROVIDER`, `AI_FALLBACK_PROVIDER`). Job Fit Analysis uses its separate `JOB_ANALYSIS_PROVIDER_ORDER`, defaulting to Gemini (`gemini-3.8-flash`), Groq (`openai/gpt-oss-120b`), then Mistral (`mistral-small-latest`). Configure model IDs enabled for each provider account. An unconfigured provider is skipped; a provider-specific error is logged safely and the service tries the next provider once. The first schema-valid report is returned. Never use a `NEXT_PUBLIC_` prefix for credentials.
+
+For Render, configure `GEMINI_API_KEY`, `GEMINI_MODEL`, `JOB_ANALYSIS_PROVIDER_ORDER`, `GROQ_API_KEY`, `GROQ_MODEL`, `MISTRAL_API_KEY`, `MISTRAL_MODEL`, `AI_TIMEOUT_SECONDS`, and the existing Redis/CORS/rate-limit settings in the backend service environment. Set secrets in Render's environment configuration only; do not add them to the frontend or commit them.
 
 ## Local development
 
@@ -94,13 +99,13 @@ Upload size defaults to 5 MiB; extracted text is limited to 30,000 characters an
 
 Chat and analysis use Redis-backed rate limits (10 and 3 requests per minute per direct peer address by default). Limits are shared across API instances using the same Redis. If Redis is unavailable, these APIs fail closed. Do not trust arbitrary forwarded-IP headers: configure the ingress/reverse proxy to sanitize client address information. CORS is restricted to `CORS_ORIGINS`.
 
-Each AI request tries the configured primary provider once and the fallback once only for a rate limit/quota response or transient network/5xx error. SDK retries are disabled to keep fallback bounded. A job analysis may therefore take up to roughly twice the configured provider timeout plus overhead. The API returns a timeout or provider failure as a safe HTTP error; there is no durable queue, retry-after-restart behavior, or stored result retrieval. Frontend and hosting request timeouts must allow for the configured provider timeouts. Throughput depends on API instance capacity and provider quotas/latency; Redis limits reduce abuse but do not guarantee provider availability.
+Chat retains its configured primary/fallback behavior. Job analysis tries each configured provider at most once in the Gemini → Groq → Mistral order, with provider SDK retries disabled/bounded so a quota failure does not trigger a long hidden retry loop. Missing keys are skipped; provider failures and invalid report output allow a single move to the next configured provider. The API returns a report only after Pydantic validation. A job analysis can take up to roughly three times the provider timeout plus overhead. The direct API returns a timeout or provider failure as a safe HTTP error; there is no durable queue, retry-after-restart behavior, or stored result retrieval. Frontend and hosting request timeouts must allow for the configured provider timeouts. Throughput depends on API instance capacity and provider quotas/latency; Redis limits reduce abuse but do not guarantee provider availability.
 
 For multi-instance deployments, point all API instances at the same reliable Redis service. The included load test causes real provider calls, so run it gradually against staging with a low request rate and account for provider quotas/costs.
 
 ## Tests and checks
 
-Backend tests mock Mistral/Groq and do not require provider keys or paid AI requests:
+Backend tests mock provider calls and do not require provider keys or paid AI requests:
 
 ```bash
 cd backend

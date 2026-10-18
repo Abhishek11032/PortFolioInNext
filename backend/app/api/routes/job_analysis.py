@@ -52,9 +52,8 @@ async def analyze_job_description(
     except DocumentValidationError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
-    # The provider service makes at most one bounded request per configured provider.
-    # This deadline leaves room for the primary and fallback provider timeouts.
-    deadline_seconds = (settings.ai_timeout_seconds * 2) + 5
+    # Each configured provider gets at most one bounded request before fallback.
+    deadline_seconds = (settings.ai_timeout_seconds * 3) + 5
     try:
         return await asyncio.wait_for(
             asyncio.to_thread(analyze_job_fit_sync, description),

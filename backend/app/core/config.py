@@ -14,10 +14,13 @@ class Settings(BaseSettings):
 
     mistral_api_key: str = ""
     groq_api_key: str = ""
+    gemini_api_key: str = ""
     ai_primary_provider: str = "mistral"
     ai_fallback_provider: str = "groq"
     mistral_model: str = "mistral-small-latest"
     groq_model: str = "openai/gpt-oss-120b"
+    gemini_model: str = "gemini-3.8-flash"
+    job_analysis_provider_order: str = "gemini,groq,mistral"
     redis_url: str = "redis://localhost:6379/0"
     cors_origins: str = "http://localhost:3000"
     chat_limit_per_minute: int = Field(default=10, ge=1, le=120)

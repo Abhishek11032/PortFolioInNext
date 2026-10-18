@@ -6,7 +6,9 @@ import { getBackendBaseUrl, getBackendError } from "@/lib/backend";
 import type { JobFitReport } from "@/types/job-analysis";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-const MAX_ANALYSIS_DURATION_MS = 7 * 60 * 1000;
+// Three sequential provider timeouts plus API overhead; gives the direct request
+// enough time to reach the final fallback when the primary providers are unavailable.
+const MAX_ANALYSIS_DURATION_MS = 10 * 60 * 1000;
 type AnalysisState = "idle" | "processing" | "completed" | "failed";
 
 function isRecord(value: unknown): value is Record<string, unknown> {

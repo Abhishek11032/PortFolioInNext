@@ -1,5 +1,6 @@
 import Image from "next/image";
 import SectionHeading from "@/components/ui/SectionHeading";
+import { professionalExperience } from "@/data/experience";
 
 const strengths = ["Responsive, reusable UI", "Full-stack web development", "APIs and relational data"];
 
@@ -13,7 +14,7 @@ export default function AboutSection() {
           <span className="absolute bottom-6 right-[-12px] rounded-lg border border-line bg-hover-surface px-4 py-3 text-xs font-medium text-cyan">Abhishek Tiwari</span>
         </div>
         <div className="max-w-[680px] text-sm leading-7 text-muted">
-          <p className="mb-4 text-base leading-7 text-cream">I&apos;m a Full Stack Developer with 2.5+ years of professional experience building scalable SaaS, fintech, and business management applications. I specialize in React.js, Next.js, TypeScript, JavaScript, Python, Django REST Framework, and PostgreSQL, with a strong focus on creating responsive user interfaces and reliable backend systems.</p>
+          <p className="mb-4 text-base leading-7 text-cream">I&apos;m a Full Stack Developer with {professionalExperience.summary}. I build scalable SaaS, fintech, and business management applications and specialize in React.js, Next.js, TypeScript, JavaScript, Python, Django REST Framework, and PostgreSQL, with a strong focus on creating responsive user interfaces and reliable backend systems.</p>
           <p className="mb-4">My experience includes developing reusable UI components, designing secure REST APIs, implementing JWT authentication and role-based access control, optimizing database queries, and integrating AI-powered document processing workflows. I&apos;ve worked on enterprise applications, fintech and KYC platforms, business management systems, and reporting dashboards.</p>
           <p>I enjoy solving complex engineering problems, improving application performance, and translating business requirements into reliable software solutions. I&apos;m passionate about clean code, scalable architecture, and continuously learning modern technologies to build efficient, secure, and maintainable applications.</p>
           <div className="mt-6 flex flex-wrap gap-2" aria-label="Core technology highlights">{["React.js", "Next.js", "TypeScript", "Python", "Django REST Framework", "FastAPI", "PostgreSQL", "GenAI"].map((tech) => <span key={tech} className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-cyan">{tech}</span>)}</div>

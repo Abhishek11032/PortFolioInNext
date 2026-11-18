@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import SocialLinks from "@/components/ui/SocialLinks";
+import { professionalExperience } from "@/data/experience";
 
 const heroSkills = ["React.js", "Next.js", "TypeScript", "Python", "Django REST Framework", "FastAPI", "GenAI"];
 
@@ -14,6 +15,7 @@ export default function HeroSection() {
           <h2 className="mt-5 max-w-[620px] text-[clamp(1.3rem,3vw,2rem)] font-semibold leading-tight tracking-[-.035em] text-cream">Building reliable products across the stack.</h2>
           <p className="mt-5 max-w-[610px] text-[15px] leading-7 text-muted sm:text-base">I develop responsive web applications and backend services for SaaS, fintech, and business platforms, with a focus on maintainable interfaces, secure APIs, and dependable data systems.</p>
 
+          <p className="mt-3 text-sm font-semibold text-cyan">{professionalExperience.displayDuration}</p>
           <ul aria-label="Core technologies" className="mt-6 flex max-w-[640px] flex-wrap gap-2">
             {heroSkills.map((skill) => <li key={skill} className="rounded-full border border-cyan/20 bg-cyan/[.06] px-3 py-1.5 text-xs font-medium text-cyan">{skill}</li>)}
           </ul>

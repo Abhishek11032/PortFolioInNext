@@ -4,16 +4,21 @@ from typing import Any
 PORTFOLIO_PROFILE: dict[str, Any] = {
     "name": "Abhishek Tiwari",
     "title": "Full Stack Developer",
+    "experience_display": "3+ Years of Experience",
+    "experience_summary": "3+ Years of Professional Full-Stack Development Experience",
+    "experience_duration_as_of_november_2026": "Approximately 3 years and 3 months",
     "professional_summary": (
-        "Full Stack Developer with 2.5+ years of professional experience building SaaS, fintech, "
+        "Full Stack Developer with 3+ years of professional experience building SaaS, fintech, "
         "and business management applications. Focuses on responsive interfaces, secure backend "
         "systems, maintainable code, and performance."
     ),
     "professional_experience": [
         {
             "role": "Software Developer — Full Stack",
-            "company": "Gowdanar Technosoft Pvt. Ltd.",
-            "duration": "April 2024 – Present",
+            "company": "GTPL",
+            "start_date": "August 2023",
+            "duration": "August 2023 – Present",
+            "professional_experience_duration": "Approximately 3 years and 3 months as of November 2026",
             "location": "Bengaluru, India",
             "details": (
                 "Developing scalable applications for fintech, KYC, and enterprise business platforms. "
